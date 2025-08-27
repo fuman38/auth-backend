@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Auth System</title>
+  <style>
+    :root{--bg:#0f172a;--card:#111827ee;--muted:#94a3b8;--text:#f8fafc;--accent:#22d3ee;--accent-2:#38bdf8;--error:#f43f5e;}
+    body{margin:0;font-family:Inter,system-ui;height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--text);padding:24px}
+    .card{width:100%;max-width:420px;background:linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));border:1px solid rgba(255,255,255,0.12);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.35);backdrop-filter:blur(10px);overflow:hidden}
+    .tabs{display:flex}
+    .tab{flex:1;text-align:center;padding:14px;cursor:pointer;font-weight:600;border-bottom:2px solid transparent}
+    .tab.active{border-color:var(--accent);color:var(--accent)}
+    .form{padding:20px}
+    .field{margin-top:16px}
+    label{display:block;font-size:.9rem;margin-bottom:6px;color:#cbd5e1}
+    input{width:100%;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.18);background:rgba(2,6,23,0.6);color:var(--text)}
+    .btn{margin-top:18px;width:100%;padding:12px;border-radius:12px;border:none;cursor:pointer;font-weight:600;font-size:1rem}
+    .btn-primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#04121a}
+    .error{color:var(--error);font-size:.9rem;margin-top:8px;display:none}
+    .notice{font-size:.9rem;color:#cbd5e1;margin-top:10px;display:none}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="tabs">
+      <div class="tab active" id="loginTab">Login</div>
+      <div class="tab" id="signupTab">Sign up</div>
+    </div>
+
+    <div class="form" id="loginForm">
+      <div class="field"><label>Email</label><input id="loginEmail" type="email" placeholder="you@example.com" required /></div>
+      <div class="field"><label>Password</label><input id="loginPassword" type="password" placeholder="••••••" minlength="6" required /></div>
+      <div class="error" id="loginError"></div>
+      <div class="notice" id="loginNotice"></div>
+      <button class="btn btn-primary" id="loginBtn">Sign in</button>
+    </div>
+
+    <div class="form" id="signupForm" style="display:none;">
+      <div class="field"><label>Email</label><input id="signupEmail" type="email" placeholder="you@example.com" required /></div>
+      <div class="field"><label>Password</label><input id="signupPassword" type="password" placeholder="Min 6 chars" minlength="6" required /></div>
+      <div class="field"><label>Confirm Password</label><input id="signupConfirm" type="password" placeholder="Re-enter password" minlength="6" required /></div>
+      <div class="error" id="signupError"></div>
+      <div class="notice" id="signupNotice"></div>
+      <button class="btn btn-primary" id="signupBtn">Create account</button>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:5000/api'; // replace with deployed backend URL
+
+    const loginTab = document.getElementById('loginTab');
+    const signupTab = document.getElementById('signupTab');
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+
+    loginTab.addEventListener('click', () => { loginTab.classList.add('active'); signupTab.classList.remove('active'); loginForm.style.display='block'; signupForm.style.display='none'; });
+    signupTab.addEventListener('click', () => { signupTab.classList.add('active'); loginTab.classList.remove('active'); signupForm.style.display='block'; loginForm.style.display='none'; });
+
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+      const error = document.getElementById('loginError');
+      const notice = document.getElementById('loginNotice');
+      error.style.display=notice.style.display='none';
+
+      try {
+        const res = await fetch(`${API_BASE}/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password})});
+        const data = await res.json();
+        if(res.ok){
+          localStorage.setItem('token', data.token);
+          notice.style.display='block';
+          notice.textContent='✅ Logged in successfully!';
+        } else { error.style.display='block'; error.textContent=data.message || 'Login failed'; }
+      } catch { error.style.display='block'; error.textContent='Server error'; }
+    });
+
+    document.getElementById('signupBtn').addEventListener('click', async () => {
+      const email=document.getElementById('signupEmail').value.trim();
+      const password=document.getElementById('signupPassword').value.trim();
+      const confirm=document.getElementById('signupConfirm').value.trim();
+      const error=document.getElementById('signupError');
+      const notice=document.getElementById('signupNotice');
+      error.style.display=notice.style.display='none';
+      if(!email || password.length<6 || password!==confirm){ error.style.display='block'; error.textContent='Invalid input or passwords do not match.'; return; }
+      try{
+        const res=await fetch(`${API_BASE}/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password})});
+        const data=await res.json();
+        if(res.ok){ notice.style.display='block'; notice.textContent='✅ Account created! You can now log in.'; signupForm.reset?.(); } else { error.style.display='block'; error.textContent=data.message||'Signup failed'; }
+      }catch{ error.style.display='block'; error.textContent='Server error'; }
+    });
+  </script>
+</body>
+</html>
